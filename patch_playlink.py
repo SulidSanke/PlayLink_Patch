@@ -2,6 +2,7 @@
 """Patch PlayLink companion APK manifests for modern Android."""
 from __future__ import annotations
 
+import re
 import shutil
 import subprocess
 import sys
@@ -79,11 +80,13 @@ def patch_manifest(decoded: Path) -> None:
 
     pkg = manifest.get("package", "")
     sdk = manifest.find("uses-sdk")
-    if sdk is not None:
-        # Match the working That's You! wrapper: API 28 compatibility mode.
-        sdk.set(q("targetSdkVersion"), "28")
-        if not sdk.get(q("minSdkVersion")):
-            sdk.set(q("minSdkVersion"), "21")
+    if sdk is None:
+        sdk = etree.Element("uses-sdk")
+        sdk.set(q("minSdkVersion"), "21")
+        manifest.insert(0, sdk)
+    sdk.set(q("targetSdkVersion"), "28")
+    if not sdk.get(q("minSdkVersion")):
+        sdk.set(q("minSdkVersion"), "21")
 
     ensure_permission(manifest, "android.permission.CHANGE_WIFI_MULTICAST_STATE")
     ensure_permission(manifest, "android.permission.ACCESS_WIFI_STATE")
@@ -105,6 +108,16 @@ def patch_manifest(decoded: Path) -> None:
     # Android 16: run 4KB-era native code on 16KB kernels without the warning dialog.
     # Integer 1 = enabled. The string "enabled" compiled to a bogus value with old aapt2.
     application.set(q("pageSizeCompat"), "enabled")
+
+    has_apache = False
+    for lib in application.findall("uses-library"):
+        if lib.get(q("name")) == "org.apache.http.legacy":
+            has_apache = True
+            break
+    if not has_apache:
+        lib = etree.SubElement(application, "uses-library")
+        lib.set(q("name"), "org.apache.http.legacy")
+        lib.set(q("required"), "false")
 
     set_exported_on_intent_activities(application)
 
@@ -128,10 +141,10 @@ def patch_manifest(decoded: Path) -> None:
     yml_path = decoded / "apktool.yml"
     if yml_path.exists():
         text = yml_path.read_text(encoding="utf-8")
-        text = text.replace("targetSdkVersion: 30", "targetSdkVersion: 28")
-        text = text.replace("targetSdkVersion: 29", "targetSdkVersion: 28")
+        text, n = re.subn(r"targetSdkVersion:\s*\d+", "targetSdkVersion: 28", text)
         yml_path.write_text(text, encoding="utf-8")
-        print("Patched apktool.yml targetSdkVersion -> 28")
+        if n:
+            print("Patched apktool.yml targetSdkVersion -> 28")
 
     print(f"Patched manifest for {pkg}")
 

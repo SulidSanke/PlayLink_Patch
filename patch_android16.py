@@ -5,6 +5,7 @@ Put official APKs in originals/, run patch.bat. Does not ship Sony APKs.
 """
 from __future__ import annotations
 
+import re
 import shutil
 import subprocess
 import sys
@@ -58,8 +59,13 @@ def find_apks() -> list[Path]:
     return found
 
 
+def safe_stem(name: str) -> str:
+    out = re.sub(r"[^A-Za-z0-9._-]+", "_", name).strip("_")
+    return out or "app"
+
+
 def patch_one(apk: Path) -> Path:
-    dest = WORK / apk.stem
+    dest = WORK / safe_stem(apk.stem)
     if dest.exists():
         shutil.rmtree(dest)
     apktool("d", "-f", "-s", "-o", str(dest), str(apk))
