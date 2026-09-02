@@ -1,0 +1,17 @@
+*.apk
+*.idsig
+*.jks
+*.keystore
+
+/originals/*
+!/originals/.gitkeep
+
+/out/
+/distr/
+/release/
+/patched/
+/work/
+/work-public/
+/work-patch/
+/__pycache__/
+*.pyc
