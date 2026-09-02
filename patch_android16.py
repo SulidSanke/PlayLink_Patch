@@ -81,21 +81,21 @@ def patch_one(apk: Path) -> Path:
 def main() -> None:
     ensure_lxml()
     if not (HERE / "tools" / "apktool.jar").exists():
-        raise SystemExit("Brak tools/apktool.jar")
+        raise SystemExit("Missing tools/apktool.jar")
     if not (HERE / "tools" / "uber-apk-signer.jar").exists():
-        raise SystemExit("Brak tools/uber-apk-signer.jar")
+        raise SystemExit("Missing tools/uber-apk-signer.jar")
     helper = HERE / "tools" / "libnoaslr.so"
     if not helper.exists():
         subprocess.run([sys.executable, str(HERE / "tools" / "gen_noaslr.py")], check=True)
 
     apks = find_apks()
     if not apks:
-        print("Nie znaleziono oryginalnych APK.")
+        print("No original APKs found.")
         print()
-        print(f"Wrzuc pliki do:\n  {ORIGINALS}")
+        print(f"Put the files in:\n  {ORIGINALS}")
         print()
-        print("Szukane gry: Hidden Agenda, That's You!, Knowledge is Power, KiP Decades")
-        print("Nie wkladaj tu gotowych *-android16.apk — tylko oryginaly.")
+        print("Expected games: Hidden Agenda, That's You!, Knowledge is Power, KiP Decades")
+        print("Do not put already patched *-android16.apk here — originals only.")
         raise SystemExit(1)
 
     WORK.mkdir(exist_ok=True)
@@ -107,7 +107,7 @@ def main() -> None:
         built.append(patch_one(apk))
 
     print("=" * 70)
-    print("Gotowe. Zainstaluj z:")
+    print("Done. Install from:")
     print(f"  {OUT}")
     for path in built:
         print(f"  - {path.name}")

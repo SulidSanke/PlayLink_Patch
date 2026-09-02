@@ -1,24 +1,24 @@
-# PlayLink companion — patch na Android 16
+# PlayLink companion — Android 16 patch
 
-Oficjalne aplikacje PlayLink (That’s You!, Knowledge is Power, Decades, Hidden Agenda) padają na nowym Androidzie. Ten skrypt przerabia **Twoje** oryginalne APK tak, żeby działały (m.in. na Androidzie 16).
+Official PlayLink apps (That’s You!, Knowledge is Power, Decades, Hidden Agenda) crash on current Android. This script patches **your** original APKs so they run again, including on Android 16.
 
-**Nie ma tu gotowych APK.** Wrzucasz oryginały, dostajesz spatchowane pliki u siebie na dysku.
+**No APKs are included.** You supply the originals; patched files are written to your machine.
 
-## Co trzeba
+## Requirements
 
 - Windows
 - [Java 17+](https://adoptium.net/)
-- [Python 3](https://www.python.org/downloads/) (zaznacz *Add python.exe to PATH*)
+- [Python 3](https://www.python.org/downloads/) (tick *Add python.exe to PATH*)
 
-## Jak użyć
+## Usage
 
-1. Pobierz oryginalne APK (wersje: That’s You! **1.6**, KiP **1.5A**, Decades **1.4**, Hidden Agenda **1.07**). Nazwa pliku jest obojętna.
-2. Wrzuć je do folderu `originals`.
-3. Odpal `patch.bat`.
-4. Zainstaluj wynik z folderu `out` (`*-android16.apk`).
+1. Get the original APKs (That’s You! **1.6**, KiP **1.5A**, Decades **1.4**, Hidden Agenda **1.07**). Filenames do not matter.
+2. Put them in the `originals` folder.
+3. Run `patch.bat`.
+4. Install the results from `out` (`*-android16.apk`).
 
-Na PS5 wyszukiwanie konsoli („Graj”) zwykle nie działa — wpisz IP ręcznie. Gra zapamięta je na tym telefonie.
+On PS5, console auto-discovery (Play) usually fails — enter the IP manually. The game remembers it on that phone.
 
-## Co wolno wrzucać do tego repo
+## What belongs in this repo
 
-Skrypty, `patch.bat`, `tools/` (apktool, signer, `libnoaslr.so`). **Żadnych `.apk`.**
+Scripts, `patch.bat`, and `tools/` (apktool, signer, `libnoaslr.so`). **No `.apk` files.**
