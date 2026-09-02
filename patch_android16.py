@@ -31,6 +31,11 @@ WORK = HERE / "work-patch"
 
 SKIP_NAME = ("-android16", "debugsigned", "wrapstored")
 
+ONCREATE_RE = re.compile(
+    r"^\.method [^\n]*onCreate\(Landroid/os/Bundle;\)V$",
+    re.M,
+)
+
 
 def ensure_lxml() -> None:
     try:
@@ -64,12 +69,152 @@ def safe_stem(name: str) -> str:
     return out or "app"
 
 
+def launcher_activity(decoded: Path) -> str | None:
+    text = (decoded / "AndroidManifest.xml").read_text(encoding="utf-8", errors="replace")
+    blocks = re.split(r"<activity\b", text, flags=re.I)
+    for block in blocks[1:]:
+        if "android.intent.action.MAIN" in block and "android.intent.category.LAUNCHER" in block:
+            m = re.search(r'android:name="([^"]+)"', block)
+            if m:
+                name = m.group(1)
+                if name.startswith("."):
+                    pkg = re.search(r'package="([^"]+)"', text)
+                    if pkg:
+                        name = pkg.group(1) + name
+                return name
+    return None
+
+
+def _insert_mic_call(method: str, cls: str) -> str:
+    # onCreate often uses .locals > 16, so p0 is v16+ and needs /range.
+    call = f"    invoke-direct/range {{p0 .. p0}}, {cls}->playlinkEnsureMic()V\n"
+    lines = method.splitlines(keepends=True)
+    out: list[str] = []
+    inserted = False
+    for line in lines:
+        out.append(line)
+        if not inserted and "invoke-super" in line:
+            out.append("\n" + call + "\n")
+            inserted = True
+    if not inserted:
+        joined = "".join(out)
+        if ".prologue" in joined:
+            return joined.replace(".prologue\n", ".prologue\n\n" + call + "\n", 1)
+        return call + joined
+    return "".join(out)
+
+
+def _append_mic_helper(text: str, cls: str) -> str:
+    helper = f"""
+.method private playlinkEnsureMic()V
+    .locals 3
+
+    const-string v0, "android.permission.RECORD_AUDIO"
+
+    invoke-virtual {{p0, v0}}, {cls}->checkSelfPermission(Ljava/lang/String;)I
+
+    move-result v1
+
+    if-eqz v1, :need_mic
+
+    return-void
+
+    :need_mic
+    const/4 v1, 0x1
+
+    new-array v1, v1, [Ljava/lang/String;
+
+    const/4 v2, 0x0
+
+    aput-object v0, v1, v2
+
+    const/16 v2, 0x7e7
+
+    invoke-virtual {{p0, v1, v2}}, {cls}->requestPermissions([Ljava/lang/String;I)V
+
+    return-void
+.end method
+"""
+    stripped = text.rstrip()
+    if stripped.endswith(".end class"):
+        return stripped[: -len(".end class")].rstrip() + "\n" + helper + "\n.end class\n"
+    return stripped + "\n" + helper + "\n"
+
+
+def _inject_mic_simple(smali: Path, cls: str) -> None:
+    text = smali.read_text(encoding="utf-8")
+    if "playlinkEnsureMic()V" in text:
+        return
+    match = ONCREATE_RE.search(text)
+    if match:
+        idx = match.start()
+        rest = text[idx:]
+        end = rest.find("\n.end method")
+        if end < 0:
+            print("  warn: onCreate has no .end method in", smali.name)
+            return
+        method = rest[:end]
+        text = text[:idx] + _insert_mic_call(method, cls) + rest[end:]
+    else:
+        super_m = re.search(r"^\.super (L[^;]+;)", text, re.M)
+        parent = super_m.group(1) if super_m else "Landroid/app/Activity;"
+        added = f"""
+.method protected onCreate(Landroid/os/Bundle;)V
+    .locals 1
+
+    invoke-super {{p0, p1}}, {parent}->onCreate(Landroid/os/Bundle;)V
+
+    invoke-direct/range {{p0 .. p0}}, {cls}->playlinkEnsureMic()V
+
+    return-void
+.end method
+"""
+        stripped = text.rstrip()
+        if stripped.endswith(".end class"):
+            text = stripped[: -len(".end class")].rstrip() + "\n" + added + "\n.end class\n"
+        else:
+            text = stripped + added + "\n"
+        print("  added onCreate to", smali.name)
+    text = _append_mic_helper(text, cls)
+    smali.write_text(text, encoding="utf-8")
+    print("  requested RECORD_AUDIO from", smali.name)
+
+
+def inject_runtime_mic_permission(decoded: Path) -> None:
+    manifest = (decoded / "AndroidManifest.xml").read_text(encoding="utf-8", errors="replace")
+    if "android.permission.RECORD_AUDIO" not in manifest:
+        return
+    act = launcher_activity(decoded)
+    if not act:
+        print("  warn: no launcher activity for mic patch")
+        return
+    rel = "/".join(act.split("."))
+    hits = list(decoded.glob(f"smali*/{rel}.smali"))
+    if not hits:
+        print("  warn: launcher smali not found", act)
+        return
+    _inject_mic_simple(hits[0], "L" + act.replace(".", "/") + ";")
+
+
+def wants_microphone(decoded: Path) -> bool:
+    manifest = decoded / "AndroidManifest.xml"
+    if not manifest.exists():
+        return False
+    return "android.permission.RECORD_AUDIO" in manifest.read_text(
+        encoding="utf-8", errors="replace"
+    )
+
+
 def patch_one(apk: Path) -> Path:
     dest = WORK / safe_stem(apk.stem)
     if dest.exists():
         shutil.rmtree(dest)
     apktool("d", "-f", "-s", "-o", str(dest), str(apk))
     patch_manifest(dest)
+    if wants_microphone(dest):
+        apktool("d", "-f", "-o", str(dest), str(apk))
+        patch_manifest(dest)
+        inject_runtime_mic_permission(dest)
     unity = is_unity(apk)
     if unity:
         restore_original_libs(dest, apk)
@@ -100,7 +245,8 @@ def main() -> None:
         print()
         print(f"Put the files in:\n  {ORIGINALS}")
         print()
-        print("Expected games: Hidden Agenda, That's You!, Knowledge is Power, KiP Decades")
+        print("Expected games: Hidden Agenda, That's You!, Knowledge is Power, KiP Decades,")
+        print("Chimparty, Frantics, SingStar Mic")
         print("Do not put already patched *-android16.apk here — originals only.")
         raise SystemExit(1)
 
@@ -109,7 +255,8 @@ def main() -> None:
     built: list[Path] = []
     for apk in apks:
         print("=" * 70)
-        print("Patch", apk.name, "(Unity wrap)" if is_unity(apk) else "(UE4/manifest)")
+        kind = "Unity wrap" if is_unity(apk) else "UE4/manifest"
+        print("Patch", apk.name, f"({kind})")
         built.append(patch_one(apk))
 
     print("=" * 70)

@@ -41,6 +41,8 @@ Paste that address into the IP / server field in the phone app, then connect.
 
 Hidden Agenda uses multicast, not that IP box. SingStar Mic uses Sony’s own discovery screen; if search fails, the console IP from the steps above is still what you need on the same network.
 
+SingStar Mic needs the **Microphone** permission. Allow it on first launch. If you already connected and saw “Mic unavailable”, grant Microphone in Android settings (Apps → SingStar Mic → Permissions) and connect again.
+
 ## What belongs in this repo
 
 Scripts, `patch.bat`, and `tools/` (apktool, signer, `libnoaslr.so`). **No `.apk` files.**
