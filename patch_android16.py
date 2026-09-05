@@ -36,6 +36,78 @@ ONCREATE_RE = re.compile(
     re.M,
 )
 
+JNIBRIDGE_INVOKE_SIGNATURE = (
+    ".method public final invoke("
+    "Ljava/lang/Object;"
+    "Ljava/lang/reflect/Method;"
+    "[Ljava/lang/Object;"
+    ")Ljava/lang/Object;"
+)
+JNIBRIDGE_SHIM_LABEL = ":playlink_service_connection_normal"
+JNIBRIDGE_PATCH_POINT = "    :cond_0\n"
+JNIBRIDGE_NATIVE_INVOKE = (
+    "Lbitter/jnibridge/JNIBridge;->invoke("
+    "JLjava/lang/Class;Ljava/lang/reflect/Method;[Ljava/lang/Object;"
+    ")Ljava/lang/Object;"
+)
+JNIBRIDGE_SERVICE_CONNECTION_SHIM = """    # Newer Android versions may dispatch a three-argument ServiceConnection
+    # callback that legacy Unity's native JNIBridge cannot resolve. Redirect it
+    # through the original two-argument callback understood by the game.
+    invoke-virtual {p2}, Ljava/lang/reflect/Method;->getDeclaringClass()Ljava/lang/Class;
+
+    move-result-object v0
+
+    const-class v4, Landroid/content/ServiceConnection;
+
+    if-ne v0, v4, :playlink_service_connection_normal
+
+    invoke-virtual {p2}, Ljava/lang/reflect/Method;->getName()Ljava/lang/String;
+
+    move-result-object v0
+
+    const-string v4, "onServiceConnected"
+
+    invoke-virtual {v4, v0}, Ljava/lang/String;->equals(Ljava/lang/Object;)Z
+
+    move-result v0
+
+    if-eqz v0, :playlink_service_connection_normal
+
+    invoke-virtual {p2}, Ljava/lang/reflect/Method;->getParameterTypes()[Ljava/lang/Class;
+
+    move-result-object v0
+
+    array-length v0, v0
+
+    const/4 v4, 0x3
+
+    if-ne v0, v4, :playlink_service_connection_normal
+
+    check-cast p1, Landroid/content/ServiceConnection;
+
+    const/4 v0, 0x0
+
+    aget-object v4, p3, v0
+
+    check-cast v4, Landroid/content/ComponentName;
+
+    const/4 v0, 0x1
+
+    aget-object v5, p3, v0
+
+    check-cast v5, Landroid/os/IBinder;
+
+    invoke-interface {p1, v4, v5}, Landroid/content/ServiceConnection;->onServiceConnected(Landroid/content/ComponentName;Landroid/os/IBinder;)V
+
+    const/4 v0, 0x0
+
+    monitor-exit v1
+
+    goto :goto_0
+
+    :playlink_service_connection_normal
+"""
+
 
 def ensure_lxml() -> None:
     try:
@@ -205,18 +277,69 @@ def wants_microphone(decoded: Path) -> bool:
     )
 
 
+def patch_legacy_unity_service_connection(decoded: Path) -> None:
+    """Redirect the extended ServiceConnection callback for legacy Unity."""
+    hits = sorted(decoded.glob("smali*/bitter/jnibridge/JNIBridge$a.smali"))
+    if not hits:
+        print("  warn: Unity JNIBridge$a.smali not found; skipping ServiceConnection shim")
+        return
+    if len(hits) != 1:
+        print(
+            f"  warn: expected one Unity JNIBridge$a.smali, found {len(hits)};"
+            " skipping ServiceConnection shim"
+        )
+        return
+
+    smali = hits[0]
+    text = smali.read_text(encoding="utf-8")
+    if JNIBRIDGE_SHIM_LABEL in text:
+        print("  legacy Unity ServiceConnection shim already present")
+        return
+    if text.count(JNIBRIDGE_INVOKE_SIGNATURE) != 1:
+        print("  warn: unsupported Unity JNIBridge InvocationHandler layout")
+        return
+
+    start = text.index(JNIBRIDGE_INVOKE_SIGNATURE)
+    end = text.find(".end method", start)
+    if end < 0:
+        print("  warn: unsupported Unity JNIBridge InvocationHandler layout")
+        return
+    method = text[start:end]
+    locals_match = re.search(r"^\s*\.locals\s+(\d+)\s*$", method, re.M)
+    if not locals_match or int(locals_match.group(1)) < 6:
+        print("  warn: Unity JNIBridge invoke method has unsupported registers")
+        return
+    if (
+        method.count(JNIBRIDGE_PATCH_POINT) != 1
+        or method.count(JNIBRIDGE_NATIVE_INVOKE) != 1
+    ):
+        print("  warn: unsupported Unity JNIBridge InvocationHandler patch point")
+        return
+
+    patched_method = method.replace(
+        JNIBRIDGE_PATCH_POINT,
+        JNIBRIDGE_PATCH_POINT + JNIBRIDGE_SERVICE_CONNECTION_SHIM,
+        1,
+    )
+    smali.write_text(text[:start] + patched_method + text[end:], encoding="utf-8")
+    print("  patched legacy Unity ServiceConnection callback")
+
+
 def patch_one(apk: Path) -> Path:
     dest = WORK / safe_stem(apk.stem)
     if dest.exists():
         shutil.rmtree(dest)
-    apktool("d", "-f", "-s", "-o", str(dest), str(apk))
+    unity = is_unity(apk)
+    decode_flags = () if unity else ("-s",)
+    apktool("d", "-f", *decode_flags, "-o", str(dest), str(apk))
     patch_manifest(dest)
     if wants_microphone(dest):
-        apktool("d", "-f", "-o", str(dest), str(apk))
-        patch_manifest(dest)
+        if not unity:
+            apktool("d", "-f", "-o", str(dest), str(apk))
+            patch_manifest(dest)
         inject_runtime_mic_permission(dest)
-    unity = is_unity(apk)
     if unity:
+        patch_legacy_unity_service_connection(dest)
         restore_original_libs(dest, apk)
         add_wrap(dest)
     signed = build_and_sign(dest, apk, OUT)
