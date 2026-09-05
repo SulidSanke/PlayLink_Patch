@@ -8,7 +8,6 @@ Official PlayLink apps crash on current Android. This script patches **your** or
 
 - [Java 17+](https://adoptium.net/)
 - [Python 3](https://www.python.org/downloads/)
-- `unzip` and `zip`
 
 On Windows, tick *Add python.exe to PATH* during Python installation.
 
@@ -16,7 +15,7 @@ The Python patcher also works on Linux; Fedora 44 has been tested with OpenJDK
 25 and Python 3.14. On Fedora, install the supporting packages with:
 
 ```bash
-sudo dnf install git python3 python3-lxml unzip zip binutils
+sudo dnf install git python3 python3-lxml
 ```
 
 Install an available OpenJDK 17 or newer package separately, then verify the
