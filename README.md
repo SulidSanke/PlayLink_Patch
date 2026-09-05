@@ -6,9 +6,28 @@ Official PlayLink apps crash on current Android. This script patches **your** or
 
 ## Requirements
 
-- Windows
 - [Java 17+](https://adoptium.net/)
-- [Python 3](https://www.python.org/downloads/) (tick *Add python.exe to PATH*)
+- [Python 3](https://www.python.org/downloads/)
+
+On Windows, tick *Add python.exe to PATH* during Python installation.
+
+The Python patcher also works on Linux; Fedora 44 has been tested with OpenJDK
+25 and Python 3.14. On Fedora, install the supporting packages with:
+
+```bash
+sudo dnf install git python3 python3-lxml
+```
+
+Install an available OpenJDK 17 or newer package separately, then verify the
+runtime before patching:
+
+```bash
+java -version
+python3 --version
+```
+
+`android-tools` is optional and only needed when installing or testing the
+result over ADB.
 
 ## Usage
 
@@ -21,8 +40,25 @@ Official PlayLink apps crash on current Android. This script patches **your** or
    - Frantics **1.8**
    - SingStar Mic **3.9**
 2. Put them in the `originals` folder.
-3. Run `patch.bat`.
+3. Run `patch.bat` on Windows, or run the Python patcher directly on Linux:
+   ```bash
+   python3 patch_android16.py
+   ```
 4. Install the results from `out` (`*-android16.apk`).
+
+### Linux example
+
+```bash
+git clone https://github.com/SulidSanke/PlayLink_Patch.git
+cd PlayLink_Patch
+
+mkdir -p originals
+cp /path/to/app.apk originals/
+
+python3 patch_android16.py
+
+ls -lh out/
+```
 
 ## Connecting on PS5
 
