@@ -8,6 +8,23 @@ import subprocess
 import sys
 from pathlib import Path
 
+
+def ensure_lxml() -> None:
+    try:
+        import lxml  # noqa: F401
+        return
+    except ImportError:
+        pass
+    print("Installing Python package lxml...")
+    result = subprocess.run([sys.executable, "-m", "pip", "install", "lxml"])
+    if result.returncode != 0:
+        raise SystemExit(
+            "Could not install lxml. Run this, then patch.bat again:\n"
+            f"  {sys.executable} -m pip install lxml"
+        )
+
+
+ensure_lxml()
 from lxml import etree
 
 ROOT = Path(__file__).resolve().parent
@@ -212,8 +229,4 @@ def main() -> None:
 
 
 if __name__ == "__main__":
-    try:
-        from lxml import etree  # noqa: F401
-    except ImportError:
-        subprocess.run([sys.executable, "-m", "pip", "install", "lxml", "-q"], check=True)
     main()

@@ -6,8 +6,6 @@ import shutil
 import zipfile
 from pathlib import Path
 
-from lxml import etree
-
 from patch_playlink import (
     ANDROID,
     OUT,
@@ -18,6 +16,7 @@ from patch_playlink import (
     q,
     restore_original_libs,
 )
+from lxml import etree
 
 WRAP_SH = """#!/system/bin/sh
 log -p i -t playlink-wrap "invoked argc=$#"

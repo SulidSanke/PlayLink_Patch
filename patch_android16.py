@@ -15,6 +15,7 @@ from pathlib import Path
 HERE = Path(__file__).resolve().parent
 sys.path.insert(0, str(HERE))
 
+# patch_playlink installs lxml on first run before importing it.
 import patch_playlink as pl
 
 pl.ROOT = HERE
@@ -35,13 +36,6 @@ ONCREATE_RE = re.compile(
     r"^\.method [^\n]*onCreate\(Landroid/os/Bundle;\)V$",
     re.M,
 )
-
-
-def ensure_lxml() -> None:
-    try:
-        import lxml  # noqa: F401
-    except ImportError:
-        subprocess.run([sys.executable, "-m", "pip", "install", "lxml", "-q"], check=True)
 
 
 def is_unity(apk: Path) -> bool:
@@ -230,7 +224,6 @@ def patch_one(apk: Path) -> Path:
 
 
 def main() -> None:
-    ensure_lxml()
     if not (HERE / "tools" / "apktool.jar").exists():
         raise SystemExit("Missing tools/apktool.jar")
     if not (HERE / "tools" / "uber-apk-signer.jar").exists():

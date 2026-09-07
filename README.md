@@ -10,6 +10,8 @@ Official PlayLink apps crash on current Android. This script patches **your** or
 - [Java 17+](https://adoptium.net/)
 - [Python 3](https://www.python.org/downloads/) (tick *Add python.exe to PATH*)
 
+The script installs the Python package `lxml` on first run if needed. If that fails, run `py -3 -m pip install lxml` and try again.
+
 ## Usage
 
 1. Get the original APKs. Filenames do not matter. Known-good versions:
