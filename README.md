@@ -35,7 +35,7 @@ The script installs the Python package `lxml` on first run if needed. If that fa
 
 1. Get the original APKs. Filenames do not matter. Known-good versions:
    - That’s You! **1.6**
-   - Knowledge is Power **1.5A**
+   - Knowledge is Power **1.5**
    - Knowledge is Power: Decades **1.4**
    - Hidden Agenda **1.07**
    - Chimparty **1.2**
