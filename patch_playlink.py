@@ -36,7 +36,7 @@ NS = {"android": ANDROID}
 
 BROKEN = [
     ROOT / "Hidden Agenda 1.07.apk",
-    ROOT / "KiP 1.5A.apk",
+    ROOT / "KiP 1.5.apk",
     ROOT / "KiP Decades 1.4.apk",
 ]
 

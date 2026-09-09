@@ -84,7 +84,7 @@ SingStar Mic needs the **Microphone** permission. Allow it on first launch. If y
 ## Known issues
 
 - **Unity “16GB of memory” crash** — old Unity 2017 aborts when camera/HAL (or other) buffers use high virtual addresses on modern 64-bit Android. Decades gets a hybrid NatCam gate (real camera only on character-select selfie). Face **overlays / landmarks** on Decades can still trip this path; **filters** on the GL preview are generally fine.
-- **Knowledge is Power (base 1.5A)** — same NatCam/camera class of problems may appear; the Decades-specific camera stage hook is **not** applied to base KiP yet (needs a separate port + in-game test).
+- **Knowledge is Power (base 1.5)** — same NatCam/camera class of problems may appear; the Decades-specific camera stage hook is **not** applied to base KiP yet (needs a separate port + in-game test).
 - **PS5 discovery** — automatic Play/Search does not find the console; use manual IP (see above).
 - Output used to be named `*-android16.apk`; it is now `*-patched.apk` so the name is not tied to one OS version.
 

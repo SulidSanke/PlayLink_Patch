@@ -32,7 +32,7 @@ exec "$@"
 """
 
 APKS = [
-    ROOT / "KiP 1.5A.apk",
+    ROOT / "KiP 1.5.apk",
     ROOT / "KiP Decades 1.4.apk",
 ]
 
