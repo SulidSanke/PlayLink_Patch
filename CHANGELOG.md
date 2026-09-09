@@ -27,3 +27,5 @@ All notable changes to the PlayLink companion patcher are listed here.
 
 - README: known issues (16GB / overlays / base KiP pending), PS5 IP, Linux notes.
 - This changelog.
+
+
