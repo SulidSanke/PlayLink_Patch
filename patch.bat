@@ -27,7 +27,7 @@ echo 1^) Put original APKs in the originals folder
 echo 2^) This script writes *-patched.apk into out
 echo.
 
-%PY% patch_android16.py
+%PY% patch_android.py
 set ERR=%ERRORLEVEL%
 echo.
 if not %ERR%==0 (

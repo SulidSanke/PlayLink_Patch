@@ -11,6 +11,7 @@ All notable changes to the PlayLink companion patcher are listed here.
 
 ### Patcher
 
+- Rename the entry script from `patch_android16.py` to `patch_android.py`.
 - Rename output APKs from `*-android16.apk` to `*-patched.apk`.
 - **Knowledge is Power: Decades 1.4** — hybrid NatCam for Android 16+:
   - real Camera2 + GL preview only on character-select selfie (`PHOTO_TAKING` / profile photo stage);

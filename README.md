@@ -44,7 +44,7 @@ The script installs the Python package `lxml` on first run if needed. If that fa
 2. Put them in the `originals` folder.
 3. Run `patch.bat` on Windows, or run the Python patcher directly on Linux:
    ```bash
-   python3 patch_android16.py
+   python3 patch_android.py
    ```
 4. Install the results from `out` (`*-patched.apk`).
 
@@ -57,7 +57,7 @@ cd PlayLink_Patch
 mkdir -p originals
 cp /path/to/app.apk originals/
 
-python3 patch_android16.py
+python3 patch_android.py
 
 ls -lh out/
 ```
@@ -86,7 +86,7 @@ SingStar Mic needs the **Microphone** permission. Allow it on first launch. If y
 - **Unity “16GB of memory” crash** — old Unity 2017 aborts when camera/HAL (or other) buffers use high virtual addresses on modern 64-bit Android. Decades gets a hybrid NatCam gate (real camera only on character-select selfie). Face **overlays / landmarks** on Decades can still trip this path; **filters** on the GL preview are generally fine.
 - **Knowledge is Power (base 1.5)** — same NatCam/camera class of problems may appear; the Decades-specific camera stage hook is **not** applied to base KiP yet (needs a separate port + in-game test).
 - **PS5 discovery** — automatic Play/Search does not find the console; use manual IP (see above).
-- Output used to be named `*-android16.apk`; it is now `*-patched.apk` so the name is not tied to one OS version.
+- Output used to be named `*-android16.apk` and the script `patch_android16.py`; they are now `*-patched.apk` and `patch_android.py` so naming is not tied to one OS version.
 
 ## Changelog
 
