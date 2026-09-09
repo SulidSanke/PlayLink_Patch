@@ -15,3 +15,12 @@
 /work-patch/
 /__pycache__/
 *.pyc
+
+backup/
+
+# Local reverse-engineering / dumps (not part of the public patcher)
+/tools/Il2CppDumper/
+/tools/il2cpp_dump/
+/tools/fake_natcam/classes/
+/tools/fake_natcam/dex/
+/tools/baksmali.jar

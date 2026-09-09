@@ -22,9 +22,9 @@ if not defined PY (
   exit /b 1
 )
 
-echo PlayLink Android 16 patcher
+echo PlayLink companion patcher
 echo 1^) Put original APKs in the originals folder
-echo 2^) This script writes *-android16.apk into out
+echo 2^) This script writes *-patched.apk into out
 echo.
 
 %PY% patch_android16.py

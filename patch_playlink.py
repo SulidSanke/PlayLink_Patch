@@ -207,7 +207,7 @@ def build_and_sign(decoded: Path, apk: Path, out_dir: Path | None = None) -> Pat
     ]
     if not signed:
         raise SystemExit(f"Signed APK not found for {apk.name}")
-    final = dest / f"{apk.stem}-android16.apk"
+    final = dest / f"{apk.stem}-patched.apk"
     chosen = max(signed, key=lambda p: p.stat().st_mtime)
     if chosen != final:
         if final.exists():

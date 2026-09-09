@@ -1,7 +1,8 @@
 #!/usr/bin/env python3
-"""One-click PlayLink companion patcher for Android 16.
+"""One-click PlayLink companion patcher for modern Android.
 
 Put official APKs in originals/, run patch.bat. Does not ship Sony APKs.
+Output APKs are named *-patched.apk.
 """
 from __future__ import annotations
 
@@ -25,12 +26,15 @@ pl.OUT = HERE / "out"
 
 from patch_noaslr_wrap import add_wrap, store_wrap_uncompressed
 from patch_playlink import apktool, build_and_sign, patch_manifest, restore_original_libs
+from patch_natcam import disable_natcam_preview
+from patch_il2cpp_profile_stage import patch_apk_lib as patch_il2cpp_profile_stage
+from patch_unity_highmem import patch_unity_highmem
 
 ORIGINALS = HERE / "originals"
 OUT = HERE / "out"
 WORK = HERE / "work-patch"
 
-SKIP_NAME = ("-android16", "debugsigned", "wrapstored")
+SKIP_NAME = ("-android16", "-patched", "debugsigned", "wrapstored")
 
 ONCREATE_RE = re.compile(
     r"^\.method [^\n]*onCreate\(Landroid/os/Bundle;\)V$",
@@ -319,6 +323,12 @@ def patch_legacy_unity_service_connection(decoded: Path) -> None:
     print("  patched legacy Unity ServiceConnection callback")
 
 
+def package_name(decoded: Path) -> str:
+    text = (decoded / "AndroidManifest.xml").read_text(encoding="utf-8", errors="replace")
+    m = re.search(r'package="([^"]+)"', text)
+    return m.group(1) if m else ""
+
+
 def patch_one(apk: Path) -> Path:
     dest = WORK / safe_stem(apk.stem)
     if dest.exists():
@@ -335,6 +345,12 @@ def patch_one(apk: Path) -> Path:
     if unity:
         patch_legacy_unity_service_connection(dest)
         restore_original_libs(dest, apk)
+        patch_unity_highmem(dest)
+        pkg = package_name(dest)
+        # Decades-only for now: NatCam stage gate RVAs/paths are game-specific.
+        if pkg == "com.playstation.kipdecades":
+            disable_natcam_preview(dest)
+            patch_il2cpp_profile_stage(dest)
         add_wrap(dest)
     signed = build_and_sign(dest, apk, OUT)
     if unity:
@@ -363,7 +379,7 @@ def main() -> None:
         print()
         print("Expected games: Hidden Agenda, That's You!, Knowledge is Power, KiP Decades,")
         print("Chimparty, Frantics, SingStar Mic")
-        print("Do not put already patched *-android16.apk here — originals only.")
+        print("Do not put already patched *-patched.apk here — originals only.")
         raise SystemExit(1)
 
     WORK.mkdir(exist_ok=True)

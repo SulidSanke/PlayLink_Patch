@@ -1,8 +1,8 @@
-# PlayLink companion — Android 16 patch
+# PlayLink companion — modern Android patch
 
-Official PlayLink apps crash on current Android. This script patches **your** original APKs so they run again, including on Android 16.
+Official PlayLink apps crash on current Android. This script patches **your** original APKs so they run again on modern Android (tested on **Android 16**; ServiceConnection fix also verified on **Android 17**).
 
-**No APKs are included.** You supply the originals; patched files are written to your machine.
+**No APKs are included.** You supply the originals; patched files are written to your machine as `*-patched.apk`.
 
 ## Requirements
 
@@ -46,7 +46,7 @@ The script installs the Python package `lxml` on first run if needed. If that fa
    ```bash
    python3 patch_android16.py
    ```
-4. Install the results from `out` (`*-android16.apk`).
+4. Install the results from `out` (`*-patched.apk`).
 
 ### Linux example
 
@@ -81,6 +81,17 @@ Hidden Agenda uses multicast, not that IP box. SingStar Mic uses Sony’s own di
 
 SingStar Mic needs the **Microphone** permission. Allow it on first launch. If you already connected and saw “Mic unavailable”, grant Microphone in Android settings (Apps → SingStar Mic → Permissions) and connect again.
 
+## Known issues
+
+- **Unity “16GB of memory” crash** — old Unity 2017 aborts when camera/HAL (or other) buffers use high virtual addresses on modern 64-bit Android. Decades gets a hybrid NatCam gate (real camera only on character-select selfie). Face **overlays / landmarks** on Decades can still trip this path; **filters** on the GL preview are generally fine.
+- **Knowledge is Power (base 1.5A)** — same NatCam/camera class of problems may appear; the Decades-specific camera stage hook is **not** applied to base KiP yet (needs a separate port + in-game test).
+- **PS5 discovery** — automatic Play/Search does not find the console; use manual IP (see above).
+- Output used to be named `*-android16.apk`; it is now `*-patched.apk` so the name is not tied to one OS version.
+
+## Changelog
+
+See [CHANGELOG.md](CHANGELOG.md) for merged pull requests and recent patcher changes.
+
 ## What belongs in this repo
 
-Scripts, `patch.bat`, and `tools/` (apktool, signer, `libnoaslr.so`). **No `.apk` files.**
+Scripts, `patch.bat`, and `tools/` (apktool, signer, `libnoaslr.so`, FakeNatCam smali). **No `.apk` files.**
